@@ -9,6 +9,9 @@ namespace
 #ifdef AQT_RUNTIME_17104
     constexpr auto runtime = SKSE::RUNTIME_SSE_1_7_104;
     constexpr REL::Version minimumSKSE{2, 3, 1, 0};
+#elif defined(AQT_RUNTIME_1597)
+    constexpr auto runtime = SKSE::RUNTIME_SSE_1_5_97;
+    constexpr REL::Version minimumSKSE{2, 0, 20, 0};
 #else
     constexpr auto runtime = SKSE::RUNTIME_SSE_1_6_1170;
     constexpr REL::Version minimumSKSE{2, 2, 6, 0};
@@ -53,6 +56,17 @@ SKSE_PLUGIN_VERSION = [] {
     version.MinimumRequiredXSEVersion(minimumSKSE);
     return version;
 }();
+
+#ifdef AQT_RUNTIME_1597
+SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* skse, SKSE::PluginInfo* info)
+{
+    info->infoVersion = SKSE::PluginInfo::kVersion;
+    info->name = "ActiveQuestTrail";
+    info->version = AQT::pluginVersion.pack();
+    return !skse->IsEditor() && skse->RuntimeVersion() == runtime &&
+           skse->SKSEVersion() >= minimumSKSE.pack();
+}
+#endif
 
 SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* skse)
 {

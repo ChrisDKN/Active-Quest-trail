@@ -47,6 +47,13 @@ function(add_trail_plugin target)
 endfunction()
 
 add_trail_plugin(ActiveQuestTrail)
+add_trail_plugin(ActiveQuestTrail1597)
+target_compile_definitions(ActiveQuestTrail1597 PRIVATE AQT_RUNTIME_1597=1)
+set_target_properties(ActiveQuestTrail1597 PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/1.5.97"
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/1.5.97"
+    PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/1.5.97")
+
 add_trail_plugin(ActiveQuestTrail17104)
 target_compile_definitions(ActiveQuestTrail17104 PRIVATE AQT_RUNTIME_17104=1)
 set_target_properties(ActiveQuestTrail17104 PROPERTIES

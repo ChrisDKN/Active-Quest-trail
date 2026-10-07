@@ -10,6 +10,11 @@
             <optionalFileGroups order="Explicit">
                 <group name="Installed game version" type="SelectExactlyOne">
                     <plugins order="Explicit">
+                        <plugin name="Skyrim 1.5.97">
+                            <description>For Skyrim 1.5.97 with SKSE 2.0.20 and the Special Edition Address Library containing version-1-5-97-0.bin.</description>
+                            <files><folder source="Runtime\1.5.97" destination="" priority="10"/></files>
+                            <typeDescriptor><type name="Optional"/></typeDescriptor>
+                        </plugin>
                         <plugin name="Skyrim 1.6.1170">
                             <description>For Skyrim 1.6.1170 with SKSE 2.2.6 and the matching Address Library. Check the version of SkyrimSE.exe if unsure.</description>
                             <files><folder source="Runtime\1.6.1170" destination="" priority="10"/></files>

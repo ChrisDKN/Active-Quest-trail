@@ -8,6 +8,7 @@ A persistent, animated quest trail for Skyrim Special Edition. Follow a floating
 
 | Skyrim Steam version | SKSE | Address Library |
 | --- | --- | --- |
+| 1.5.97 | 2.0.20 | Special Edition database: `version-1-5-97-0.bin` |
 | 1.6.1170 | 2.2.6 | Matching 1.6.1170 database |
 | 1.7.104 | 2.3.1 | All in One v13 or newer, including the 1.7.104 database |
 
@@ -56,7 +57,7 @@ On Linux, install LLVM 20 (including clang-cl, lld-link, llvm-lib, llvm-rc, and 
 python3 scripts/bootstrap.py --linux-sdk
 cmake --preset linux
 cmake --build --preset linux
-python3 scripts/package.py build/linux/ActiveQuestTrail.dll build/linux/1.7.104/ActiveQuestTrail.dll
+python3 scripts/package.py build/linux/ActiveQuestTrail.dll build/linux/1.7.104/ActiveQuestTrail.dll build/linux/1.5.97/ActiveQuestTrail.dll
 ```
 
 On Windows, run these commands from an x64 Visual Studio developer terminal with MSVC 14.51 (compiler 19.51), the Windows SDK, and Ninja available. This matches the pinned CommonLib prebuilt toolset:
@@ -65,10 +66,10 @@ On Windows, run these commands from an x64 Visual Studio developer terminal with
 python scripts/bootstrap.py
 cmake --preset windows
 cmake --build --preset windows
-python scripts/package.py build/windows/ActiveQuestTrail.dll build/windows/1.7.104/ActiveQuestTrail.dll
+python scripts/package.py build/windows/ActiveQuestTrail.dll build/windows/1.7.104/ActiveQuestTrail.dll build/windows/1.5.97/ActiveQuestTrail.dll
 ```
 
-Both runtime DLLs build by default. Packaging generates the ESP, meshes, textures, and FOMOD in `dist/`. No Creation Kit, NifSkope, Skyrim installation, or extracted game assets are needed to build the package. The mist references Skyrim's existing `MagicCaustic01.dds` texture.
+All three runtime DLLs build by default. Packaging generates the ESP, meshes, textures, and FOMOD in `dist/`. No Creation Kit, NifSkope, Skyrim installation, or extracted game assets are needed to build the package. The mist references Skyrim's existing `MagicCaustic01.dds` texture.
 
 `VERSION` is the release version source for CMake, plugin metadata, startup logging, and packaging. For a loose 1.6.1170 developer install, first run `scripts/build_assets.py` and `scripts/build_records.py`, then use `cmake --install build/linux --prefix <Data-directory>` (or `build/windows`).
 

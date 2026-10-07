@@ -15,9 +15,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("dll", type=Path)
     parser.add_argument("dll_17104", type=Path)
+    parser.add_argument("dll_1597", type=Path)
     args = parser.parse_args()
-    if not args.dll.is_file() or not args.dll_17104.is_file():
-        parser.error("Both compiled runtime DLLs are required")
+    if not all(dll.is_file() for dll in (args.dll, args.dll_17104, args.dll_1597)):
+        parser.error("All three compiled runtime DLLs are required")
     version = (ROOT / "VERSION").read_text().strip()
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         parser.error("VERSION must contain major.minor.patch")
@@ -29,7 +30,7 @@ def main():
     core.mkdir(exist_ok=True)
     build_assets.build(core)
     build_records.build(core)
-    for runtime, dll in [("1.6.1170", args.dll), ("1.7.104", args.dll_17104)]:
+    for runtime, dll in [("1.5.97", args.dll_1597), ("1.6.1170", args.dll), ("1.7.104", args.dll_17104)]:
         target = destination / "Runtime" / runtime / "SKSE/Plugins/ActiveQuestTrail.dll"
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(dll, target)
