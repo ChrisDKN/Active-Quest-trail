@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+    <moduleName>Active Quest Trail</moduleName>
+    <moduleImage path="fomod\with_cs_light.png"/>
+    <requiredInstallFiles>
+        <folder source="Core" destination="" priority="0"/>
+    </requiredInstallFiles>
+    <installSteps order="Explicit">
+        <installStep name="Skyrim version">
+            <optionalFileGroups order="Explicit">
+                <group name="Installed game version" type="SelectExactlyOne">
+                    <plugins order="Explicit">
+                        <plugin name="Skyrim 1.6.1170">
+                            <description>For Skyrim 1.6.1170 with SKSE 2.2.6 and the matching Address Library. Check the version of SkyrimSE.exe if unsure.</description>
+                            <files><folder source="Runtime\1.6.1170" destination="" priority="10"/></files>
+                            <typeDescriptor><type name="Optional"/></typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim 1.7.104">
+                            <description>For Skyrim 1.7.104 with SKSE 2.3.1 and Address Library All in One v13 or newer.</description>
+                            <files><folder source="Runtime\1.7.104" destination="" priority="10"/></files>
+                            <typeDescriptor><type name="Optional"/></typeDescriptor>
+                        </plugin>
+                    </plugins>
+                </group>
+            </optionalFileGroups>
+        </installStep>
+    </installSteps>
+</config>

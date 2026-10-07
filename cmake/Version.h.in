@@ -1,0 +1,7 @@
+#pragma once
+
+namespace AQT
+{
+    inline constexpr REL::Version pluginVersion{@PROJECT_VERSION_MAJOR@, @PROJECT_VERSION_MINOR@, @PROJECT_VERSION_PATCH@, 0};
+    inline constexpr auto pluginVersionString = "@PROJECT_VERSION@";
+}
