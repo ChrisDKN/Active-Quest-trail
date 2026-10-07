@@ -9,6 +9,8 @@ namespace AQT
     struct Settings
     {
         bool enabled{true};
+        int toggleKey{0};
+        int toggleModifier{0};
         int trailStyle{0};
         float chickenDistance{500.0f};
         bool chickenTrail{false};
@@ -39,6 +41,7 @@ namespace AQT
 
     Settings GetSettings();
     void SetSettings(Settings settings);
+    void ToggleEnabled();
     void LoadSettings();
     bool SaveSettings();
     void SavePendingSettings(bool force = false);

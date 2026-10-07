@@ -1,4 +1,5 @@
 #include "Settings.h"
+#include "Keybind.h"
 #include "Trail.h"
 #include "Version.h"
 
@@ -23,6 +24,7 @@ namespace
         case SKSE::MessagingInterface::kDataLoaded:
             AQT::LoadSettings();
             AQT::RegisterMenu();
+            AQT::RegisterToggleInput();
             if (AQT::InitializeTrail()) {
                 AQT::InstallUpdateHook();
             }

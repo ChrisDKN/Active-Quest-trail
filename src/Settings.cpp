@@ -1,5 +1,6 @@
 #include "Settings.h"
 #include "ConfigFile.h"
+#include "Keybind.h"
 
 #include <Windows.h>
 #include <atomic>
@@ -84,6 +85,7 @@ namespace AQT
             ImGuiMCP::Separator();
             auto settings = GetSettings();
             bool changed = ImGuiMCP::Checkbox("Enable quest trail", &settings.enabled);
+            changed |= RenderKeybindSettings(settings);
             const char* styles[]{"Wisp trail", "Follow the chicken"};
             changed |= ImGuiMCP::Combo("Trail style", &settings.trailStyle, styles, 2);
             if (settings.trailStyle == 1) {
@@ -155,6 +157,10 @@ namespace AQT
 
     void SetSettings(Settings settings)
     {
+        if (!IsBindableKey(settings.toggleKey)) {
+            settings.toggleKey = 0;
+        }
+        settings.toggleModifier = std::clamp(settings.toggleModifier, 0, 3);
         settings.trailStyle = std::clamp(settings.trailStyle, 0, 1);
         settings.chickenDistance = std::clamp(settings.chickenDistance, 300.0f, 1000.0f);
         settings.brightness = std::clamp(settings.brightness, 0.1f, 5.0f);
@@ -177,6 +183,16 @@ namespace AQT
         ++revision;
     }
 
+    void ToggleEnabled()
+    {
+        {
+            std::scoped_lock lock(mutex);
+            current.enabled = !current.enabled;
+            ++revision;
+        }
+        QueueSave();
+    }
+
     std::uint64_t SettingsRevision()
     {
         std::scoped_lock lock(mutex);
@@ -194,6 +210,8 @@ namespace AQT
             lights.Load(LightingDefaultsPath());
             Settings settings;
             settings.enabled = config.Number("General", "Enabled", 1) != 0;
+            settings.toggleKey = static_cast<int>(std::clamp(config.Number("Controls", "ToggleKey", 0), 0.0f, 255.0f));
+            settings.toggleModifier = static_cast<int>(std::clamp(config.Number("Controls", "ToggleModifier", 0), 0.0f, 3.0f));
             settings.trailStyle = static_cast<int>(std::clamp(config.Number("General", "TrailStyle", 0), 0.0f, 1.0f));
             settings.chickenDistance = config.Number("General", "ChickenDistance", settings.chickenDistance);
             settings.chickenTrail = config.Number("General", "ChickenTrail", 0) != 0;
@@ -269,6 +287,8 @@ namespace AQT
                    << "\nAnimate=" << settings.animate << "\nParticles=" << settings.particles
                    << "\nAnimationSpeed=" << settings.animationSpeed
                    << "\nFadeSeconds=" << settings.fadeSeconds << '\n';
+            output << "\n[Controls]\nToggleKey=" << settings.toggleKey
+                   << "\nToggleModifier=" << settings.toggleModifier << '\n';
             output << "\n[Lighting]\nEnabled=" << settings.trailLights
                    << "\nBrightness=" << settings.lightBrightness
                    << "\nRadius=" << settings.lightRadius << '\n';
@@ -326,6 +346,7 @@ namespace AQT
             spdlog::info("SKSE Menu Framework 3 unavailable; INI configuration remains available");
             return;
         }
+        RegisterKeybindMenu();
         SKSEMenuFramework::SetSection("Active Quest Trail");
         SKSEMenuFramework::AddSectionItem("Settings", RenderMenu);
         spdlog::info("Settings page registered");
