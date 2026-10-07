@@ -1,9 +1,11 @@
 import argparse
 import re
 import shutil
+import tempfile
 import zipfile
 from pathlib import Path
 
+import build_archive
 import build_assets
 import build_records
 
@@ -28,7 +30,10 @@ def main():
     destination.mkdir(parents=True, exist_ok=True)
     core = destination / "Core"
     core.mkdir(exist_ok=True)
-    build_assets.build(core)
+    with tempfile.TemporaryDirectory(prefix="aqt-assets-") as temporary:
+        assets = Path(temporary)
+        build_assets.build(assets)
+        build_archive.build(assets, core / "ActiveQuestTrail.bsa")
     build_records.build(core)
     for runtime, dll in [("1.5.97", args.dll_1597), ("1.6.1170", args.dll), ("1.7.104", args.dll_17104)]:
         target = destination / "Runtime" / runtime / "SKSE/Plugins/ActiveQuestTrail.dll"
