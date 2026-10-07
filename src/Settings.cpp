@@ -4,7 +4,6 @@
 #include <Windows.h>
 #include <atomic>
 #include <chrono>
-#include <system_error>
 #include <fstream>
 #include <mutex>
 #include <sstream>
@@ -43,15 +42,11 @@ namespace AQT
         void WriteConfig(const std::filesystem::path& path, const std::string& text)
         {
             std::filesystem::create_directories(path.parent_path());
-            auto temporary = path;
-            temporary += L".tmp";
-            std::ofstream output(temporary, std::ios::trunc);
+            // Preserve mod managers' hardlinks to the stored user settings.
+            std::ofstream output(path, std::ios::trunc);
             output.exceptions(std::ios::badbit | std::ios::failbit);
             output << text;
             output.close();
-            if (!MoveFileExW(temporary.c_str(), path.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
-                throw std::system_error(static_cast<int>(GetLastError()), std::system_category(), "Cannot replace " + path.string());
-            }
         }
 
         void QueueSave()
