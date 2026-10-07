@@ -82,40 +82,35 @@ namespace AQT
         }
     }
 
-    RE::ObjectRefHandle FindRouteDestination(RE::PlayerCharacter* player, RE::GuideEffect* effect, const RE::NiPoint3& endpoint)
+    RE::ObjectRefHandle FindRouteDestination(RE::PlayerCharacter* player, RE::GuideEffect* effect)
     {
-        RE::ObjectRefHandle result;
-        float nearest = 256.0f * 256.0f;
         if (!effect->questTarget || !effect->quest) {
-            return result;
+            return {};
         }
-        const auto consider = [&](RE::TESObjectREFR* ref) {
-            if (!ref || ref == player || !ref->GetBaseObject() ||
-                ref->IsDisabled() || ref->IsDeleted() || !ref->Get3D() || !SameSpace(ref, player)) {
-                return;
-            }
-            const auto offset = ref->GetPosition() - endpoint;
-            const float distance = offset.x * offset.x + offset.y * offset.y;
-            if (std::abs(offset.z) <= 192.0f && distance < nearest) {
-                nearest = distance;
-                result = ref->GetHandle();
-            }
+        const auto eligible = [&](RE::TESObjectREFR* ref) {
+            return ref && ref != player && ref->GetBaseObject() &&
+                   !ref->IsDisabled() && !ref->IsDeleted() && SameSpace(ref, player);
         };
         {
             RE::BSSpinLockGuard guard(player->GetQuestTargetsLock());
-            for (const auto& link : effect->questTarget->teleportPath.teleportRefs) {
-                consider(link.ref);
-                if (link.ref) {
-                    auto otherSide = link.ref->extraList.GetTeleportLinkedDoor().get();
-                    consider(otherSide.get());
+            const auto& doors = effect->questTarget->teleportPath.teleportRefs;
+            if (!doors.empty()) {
+                auto* door = doors.front().ref;
+                if (eligible(door)) {
+                    return door->GetHandle();
+                }
+                if (door) {
+                    auto otherSide = door->extraList.GetTeleportLinkedDoor().get();
+                    if (eligible(otherSide.get())) {
+                        return otherSide->GetHandle();
+                    }
                 }
             }
         }
         RE::ObjectRefHandle tracking;
         effect->questTarget->GetTrackingRef(tracking, effect->quest);
         auto tracked = tracking.get();
-        consider(tracked.get());
-        return result;
+        return eligible(tracked.get()) ? tracking : RE::ObjectRefHandle{};
     }
 
     void SetGlowDestination(RE::ObjectRefHandle target)
@@ -124,7 +119,7 @@ namespace AQT
             StopGlow(false);
             destination = target;
             if (auto ref = target.get()) {
-                spdlog::info("Trail ends at reference {:08X}", ref->GetFormID());
+                spdlog::info("Quest marker glow target: {:08X}", ref->GetFormID());
             }
         }
     }

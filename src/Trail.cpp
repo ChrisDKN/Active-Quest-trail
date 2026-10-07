@@ -525,7 +525,7 @@ namespace AQT
             route.destination = {};
             for (auto* effect : OwnedEffects(player, route)) {
                 if (!effect->flags.any(RE::ActiveEffect::Flag::kDispelled, RE::ActiveEffect::Flag::kInactive)) {
-                    route.destination = FindRouteDestination(player, effect, prepared.back().position);
+                    route.destination = FindRouteDestination(player, effect);
                     if (route.destination) {
                         break;
                     }
@@ -769,11 +769,7 @@ namespace AQT
                 displayedRoute.clear();
                 progressCache.Invalidate();
             }
-            auto target = route.destination.get();
-            const auto& end = route.markers.back().position;
-            const bool reachesEnd = !displayedRoute.empty() &&
-                (RE::NiPoint3{displayedRoute.back()[0], displayedRoute.back()[1], displayedRoute.back()[2]} - end).SqrLength() < 96.0f * 96.0f;
-            SetGlowDestination(target && reachesEnd ? route.destination : RE::ObjectRefHandle{});
+            SetGlowDestination(route.destination);
             routeAge = 0.0f;
             timings.longestPresent = std::max(timings.longestPresent,
                 std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count());

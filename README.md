@@ -1,6 +1,6 @@
 # Active Quest Trail
 
-A persistent, animated quest trail for Skyrim Special Edition. Follow a floating trail to the active objective without equipping a spell or shout. Destinations glow when the trail reaches them, and optional Community Shaders lighting illuminates nearby surfaces.
+A persistent, animated quest trail for Skyrim Special Edition. Follow a floating trail to the active objective without equipping a spell or shout. The route's quest-marked door or object glows even when the trail stops short, and optional Community Shaders lighting illuminates nearby surfaces.
 
 ![Active Quest Trail](installer/fomod/with_cs_light.png)
 
