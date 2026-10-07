@@ -84,6 +84,13 @@ namespace AQT
             ImGuiMCP::Separator();
             auto settings = GetSettings();
             bool changed = ImGuiMCP::Checkbox("Enable quest trail", &settings.enabled);
+            const char* styles[]{"Wisp trail", "Follow the chicken"};
+            changed |= ImGuiMCP::Combo("Trail style", &settings.trailStyle, styles, 2);
+            if (settings.trailStyle == 1) {
+                changed |= ImGuiMCP::Checkbox("Show trail with chicken", &settings.chickenTrail);
+                changed |= ImGuiMCP::SliderFloat("Chicken lead distance", &settings.chickenDistance, 300.0f, 1000.0f, "%.0f units");
+                ImGuiMCP::TextWrapped("Cosmetic guide; reappears ahead if you outrun it.");
+            }
             ImGuiMCP::Separator();
             changed |= ImGuiMCP::Checkbox("Hide indoors", &settings.hideIndoors);
             changed |= ImGuiMCP::Checkbox("Hide in dungeons", &settings.hideDungeons);
@@ -148,6 +155,8 @@ namespace AQT
 
     void SetSettings(Settings settings)
     {
+        settings.trailStyle = std::clamp(settings.trailStyle, 0, 1);
+        settings.chickenDistance = std::clamp(settings.chickenDistance, 300.0f, 1000.0f);
         settings.brightness = std::clamp(settings.brightness, 0.1f, 5.0f);
         settings.opacity = std::clamp(settings.opacity, 0.05f, 1.0f);
         settings.height = std::clamp(settings.height, 16.0f, 160.0f);
@@ -185,6 +194,9 @@ namespace AQT
             lights.Load(LightingDefaultsPath());
             Settings settings;
             settings.enabled = config.Number("General", "Enabled", 1) != 0;
+            settings.trailStyle = static_cast<int>(std::clamp(config.Number("General", "TrailStyle", 0), 0.0f, 1.0f));
+            settings.chickenDistance = config.Number("General", "ChickenDistance", settings.chickenDistance);
+            settings.chickenTrail = config.Number("General", "ChickenTrail", 0) != 0;
             settings.hideIndoors = config.Number("Visibility", "HideIndoors", 0) != 0;
             settings.hideDungeons = config.Number("Visibility", "HideDungeons", 0) != 0;
             settings.hideInCombat = config.Number("Visibility", "HideInCombat", 0) != 0;
@@ -237,6 +249,9 @@ namespace AQT
             std::ostringstream output;
             output.imbue(std::locale::classic());
             output << "[General]\nEnabled=" << settings.enabled
+                   << "\nTrailStyle=" << settings.trailStyle
+                   << "\nChickenDistance=" << settings.chickenDistance
+                   << "\nChickenTrail=" << settings.chickenTrail
                    << "\nTrailLength=" << settings.trailLength
                    << "\nAnchorTrail=" << settings.anchorTrail
                    << "\nOffRouteDistance=" << settings.offRouteDistance

@@ -45,6 +45,41 @@ namespace AQT
         return result;
     }
 
+    struct RouteSample
+    {
+        std::array<float, 3> position{};
+        std::array<float, 3> direction{0.0f, 1.0f, 0.0f};
+    };
+
+    inline RouteSample SampleRoute(std::span<const std::array<float, 3>> points, float distance)
+    {
+        RouteSample result;
+        if (points.empty()) {
+            return result;
+        }
+        result.position = points.front();
+        distance = std::max(0.0f, distance);
+        for (std::size_t i = 1; i < points.size(); ++i) {
+            const auto& start = points[i - 1];
+            const auto& end = points[i];
+            const std::array direction{end[0] - start[0], end[1] - start[1], end[2] - start[2]};
+            const float length = std::sqrt(direction[0] * direction[0] + direction[1] * direction[1] + direction[2] * direction[2]);
+            if (length <= 0.001f) {
+                continue;
+            }
+            const float t = std::min(distance / length, 1.0f);
+            for (unsigned axis = 0; axis < 3; ++axis) {
+                result.position[axis] = start[axis] + direction[axis] * t;
+                result.direction[axis] = direction[axis] / length;
+            }
+            if (distance <= length) {
+                break;
+            }
+            distance -= length;
+        }
+        return result;
+    }
+
     class RouteProgressCache
     {
     public:

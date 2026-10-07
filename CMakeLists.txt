@@ -33,7 +33,7 @@ set_target_properties(CommonLibSSE PROPERTIES
 )
 
 function(add_trail_plugin target)
-    add_library(${target} SHARED src/Plugin.cpp src/Settings.cpp src/Trail.cpp src/DestinationGlow.cpp)
+    add_library(${target} SHARED src/Plugin.cpp src/Settings.cpp src/Trail.cpp src/DestinationGlow.cpp src/ChickenGuide.cpp)
     target_include_directories(${target} PRIVATE src extern "${CMAKE_CURRENT_BINARY_DIR}/generated")
     target_precompile_headers(${target} PRIVATE src/PCH.h)
     target_compile_options(${target} PRIVATE /EHsc /Zi /W3 "$<$<CXX_COMPILER_ID:MSVC>:/Zc:preprocessor>")

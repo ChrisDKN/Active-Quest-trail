@@ -1,4 +1,5 @@
 #include "Trail.h"
+#include "ChickenGuide.h"
 #include "DestinationGlow.h"
 #include "RefreshState.h"
 #include "Settings.h"
@@ -247,6 +248,7 @@ namespace AQT
 
         void ClearVisuals()
         {
+            ResetChickenGuide();
             ResetDestinationGlow();
             for (auto& wisp : wisps) {
                 RemoveLight(wisp);
@@ -547,12 +549,28 @@ namespace AQT
             animationTime += static_cast<double>(delta) * appearance.animationSpeed;
             unsigned sparkPairs{0};
             const auto progress = progressCache.Get(displayedRoute, {playerPosition.x, playerPosition.y, playerPosition.z});
+            const float chickenEnd = UpdateChickenGuide(visualParent.get(), displayedRoute, progress.travelled,
+                delta, appearance, routeAge <= 5.0f);
+            if (appearance.trailStyle == 1 && !appearance.chickenTrail &&
+                chickenEnd != std::numeric_limits<float>::max()) {
+                for (auto& wisp : wisps) {
+                    wisp.root->CullNode(true);
+                    wisp.visibleAlpha = 0.0f;
+                    if (wisp.light) {
+                        RemoveLight(wisp);
+                    }
+                }
+                RE::NiUpdateData update{};
+                visualParent->UpdateUpwardPass(update);
+                return;
+            }
             height += (appearance.height - height) * blend;
             const auto inverse = visualParent->world.Invert();
             for (auto& wisp : wisps) {
                 wisp.visibleAlpha = 0.0f;
                 if (wisp.wanted && !wisp.relocating) {
-                    wisp.routeVisibility = RouteVisibility(wisp.routeDistance, progress.travelled);
+                    wisp.routeVisibility = RouteVisibility(wisp.routeDistance, progress.travelled) *
+                        SmoothVisibility(chickenEnd - wisp.routeDistance);
                 }
                 const auto offset = wisp.target - playerPosition;
                 if (routeAge > 5.0f || (!appearance.anchorTrail && offset.SqrLength() < 96.0f * 96.0f &&
@@ -929,12 +947,14 @@ namespace AQT
                 timings.longestSubmit = std::max(timings.longestSubmit, milliseconds);
             }
             const auto count = std::ranges::count_if(wisps, [](const auto& wisp) { return wisp.visibleAlpha > 0.0f; });
-            SetStatus(count ? "Following the current objective" :
+            SetStatus(settings.trailStyle == 1 && !settings.chickenTrail && !displayedRoute.empty() && routeAge <= 5.0f ?
+                "Following the chicken" : count ? "Following the current objective" :
                 !wisps.empty() && routeAge <= 5.0f ? "Route ready; nearby trail is inside player clearance" : "Waiting for a route from Skyrim", count);
         }
 
         void ResetRuntime()
         {
+            ResetChickenGuide(true);
             ResetDestinationGlow(true);
             ClearVisuals();
             mistModel.reset();

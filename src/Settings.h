@@ -9,6 +9,9 @@ namespace AQT
     struct Settings
     {
         bool enabled{true};
+        int trailStyle{0};
+        float chickenDistance{500.0f};
+        bool chickenTrail{false};
         bool hideIndoors{false};
         bool hideDungeons{false};
         bool hideInCombat{false};
