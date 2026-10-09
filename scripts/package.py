@@ -35,6 +35,7 @@ def main():
         build_assets.build(assets)
         build_archive.build(assets, core / "ActiveQuestTrail.bsa")
     build_records.build(core)
+    shutil.copytree(ROOT / "Interface", core / "Interface")
     for runtime, dll in [("1.5.97", args.dll_1597), ("1.6.1170", args.dll), ("1.7.104", args.dll_17104)]:
         target = destination / "Runtime" / runtime / "SKSE/Plugins/ActiveQuestTrail.dll"
         target.parent.mkdir(parents=True, exist_ok=True)

@@ -1,6 +1,7 @@
 #include "Settings.h"
 #include "Keybind.h"
 #include "Trail.h"
+#include "Translations.h"
 #include "Version.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
@@ -22,6 +23,7 @@ namespace
     {
         switch (message->type) {
         case SKSE::MessagingInterface::kDataLoaded:
+            AQT::Translations::Load();
             AQT::LoadSettings();
             AQT::RegisterMenu();
             AQT::RegisterTrailInput();

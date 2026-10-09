@@ -830,9 +830,9 @@ namespace AQT
             const auto settings = GetSettings();
             if (!UpdateTrailVisibility(settings, delta)) {
                 ClearTrail();
-                SetStatus(!settings.enabled ? "Disabled" : settings.holdToShow ?
-                    settings.holdKey ? "Hold the configured key to show the trail" : "Set a hold key in Settings" :
-                    settings.timedKey ? "Press the configured key to show the trail" : "Set a timed key in Settings");
+                SetStatus(!settings.enabled ? "StatusDisabled" : settings.holdToShow ?
+                    settings.holdKey ? "StatusHoldKey" : "StatusSetHoldKey" :
+                    settings.timedKey ? "StatusTimedKey" : "StatusSetTimedKey");
                 return;
             }
             refresh.Advance(delta);
@@ -858,11 +858,11 @@ namespace AQT
             const bool lengthChanged = settings.trailLength != appearance.trailLength;
             appearance = settings;
             auto* cell = player->GetParentCell();
-            const char* hidden = player->IsDead() ? "Hidden while dead" :
-                                 !cell ? "Waiting for an area" :
-                                 settings.hideIndoors && cell->IsInteriorCell() ? "Hidden indoors" :
-                                 settings.hideDungeons && InDungeon(player) ? "Hidden in a dungeon" :
-                                 settings.hideInCombat && player->IsInCombat() ? "Hidden in combat" : nullptr;
+            const char* hidden = player->IsDead() ? "StatusDead" :
+                                 !cell ? "StatusWaitingForArea" :
+                                 settings.hideIndoors && cell->IsInteriorCell() ? "StatusIndoors" :
+                                 settings.hideDungeons && InDungeon(player) ? "StatusDungeon" :
+                                 settings.hideInCombat && player->IsInCombat() ? "StatusCombat" : nullptr;
             if (hidden) {
                 ClearTrail();
                 SetStatus(hidden);
@@ -892,7 +892,7 @@ namespace AQT
             }
             if (!hasTargets) {
                 ClearTrail();
-                SetStatus("No tracked quest objective");
+                SetStatus("StatusNoObjective");
                 return;
             }
             UpdateDestinationGlow(player, settings, routeAge <= 5.0f);
@@ -935,7 +935,7 @@ namespace AQT
             if (due) {
                 auto* caster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
                 if (!caster) {
-                    SetStatus("Waiting for the player");
+                    SetStatus("StatusWaitingForPlayer");
                     return;
                 }
                 auto& route = routes[refresh.Begin()];
@@ -951,8 +951,8 @@ namespace AQT
             }
             const auto count = std::ranges::count_if(wisps, [](const auto& wisp) { return wisp.visibleAlpha > 0.0f; });
             SetStatus(settings.trailStyle == 1 && !settings.chickenTrail && !displayedRoute.empty() && routeAge <= 5.0f ?
-                "Following the chicken" : count ? "Following the current objective" :
-                !wisps.empty() && routeAge <= 5.0f ? "Route ready; nearby trail is inside player clearance" : "Waiting for a route from Skyrim", count);
+                "StatusFollowingChicken" : count ? "StatusFollowingObjective" :
+                !wisps.empty() && routeAge <= 5.0f ? "StatusPlayerClearance" : "StatusWaitingForRoute", count);
         }
 
         void ResetRuntime()
@@ -1036,7 +1036,7 @@ namespace AQT
                 !route.spell->effects[0] || !route.spell->effects[0]->baseEffect ||
                 route.spell->effects[0]->baseEffect->GetArchetype() != RE::EffectArchetypes::ArchetypeID::kGuide) {
                 spdlog::error("ActiveQuestTrail.esp is missing or outdated; install the complete Active Quest Trail package");
-                SetStatus("ActiveQuestTrail.esp is missing or outdated");
+                SetStatus("StatusMissingPlugin");
                 return false;
             }
             spdlog::info("Trail route {}: spell={:08X}, hazard={:08X}", i, route.spell->GetFormID(), route.hazard->GetFormID());
@@ -1074,14 +1074,14 @@ namespace AQT
     {
         loaded = false;
         ResetRuntime();
-        SetStatus("Loading game");
+        SetStatus("StatusLoading");
     }
 
     void OnLoadFinished(bool success)
     {
         ResetRuntime();
         loaded = success;
-        SetStatus(success ? "Waiting for the player" : "Game load failed");
+        SetStatus(success ? "StatusWaitingForPlayer" : "StatusLoadFailed");
     }
 
     void OnSave()

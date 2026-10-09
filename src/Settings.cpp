@@ -1,6 +1,7 @@
 #include "Settings.h"
 #include "ConfigFile.h"
 #include "Keybind.h"
+#include "Translations.h"
 
 #include <Windows.h>
 #include <atomic>
@@ -22,7 +23,7 @@ namespace AQT
         std::atomic<bool> savePending{false};
         std::chrono::steady_clock::time_point saveAfter;
         std::uint64_t revision{0};
-        std::string status{"Waiting for a loaded game"};
+        std::string status{"StatusWaitingForGame"};
         std::size_t segmentCount{0};
 
         std::filesystem::path ConfigPath()
@@ -60,92 +61,92 @@ namespace AQT
 
         void RenderMenu()
         {
-            if (ImGuiMCP::Button("Save now")) {
+            if (ImGuiMCP::Button(Translations::Label("SaveNow"))) {
                 SaveSettings();
             }
             ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button("Reload settings")) {
+            if (ImGuiMCP::Button(Translations::Label("ReloadSettings"))) {
                 LoadSettings();
             }
             ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button("Restore defaults")) {
+            if (ImGuiMCP::Button(Translations::Label("RestoreDefaults"))) {
                 SetSettings(Settings{});
                 QueueSave();
             }
-            const char* message = "Changes save automatically.";
+            const char* message = Translations::Get("AutoSave");
             switch (saveState.load()) {
-            case SaveState::Pending: message = "Saving after editing..."; break;
-            case SaveState::Saved: message = "Settings saved automatically."; break;
-            case SaveState::Failed: message = "Could not save settings. Check ActiveQuestTrail.log and use Save now to retry."; break;
-            case SaveState::Reloaded: message = "Settings reloaded. Changes save automatically."; break;
-            case SaveState::LoadFailed: message = "Could not reload settings. Check ActiveQuestTrail.log."; break;
+            case SaveState::Pending: message = Translations::Get("SavePending"); break;
+            case SaveState::Saved: message = Translations::Get("SaveSucceeded"); break;
+            case SaveState::Failed: message = Translations::Get("SaveFailed"); break;
+            case SaveState::Reloaded: message = Translations::Get("SettingsReloaded"); break;
+            case SaveState::LoadFailed: message = Translations::Get("ReloadFailed"); break;
             default: break;
             }
             ImGuiMCP::TextWrapped("%s", message);
             ImGuiMCP::Separator();
             auto settings = GetSettings();
-            bool changed = ImGuiMCP::Checkbox("Enable quest trail", &settings.enabled);
+            bool changed = ImGuiMCP::Checkbox(Translations::Label("EnableQuestTrail"), &settings.enabled);
             changed |= RenderKeybindSettings(settings);
-            const char* styles[]{"Wisp trail", "Follow the chicken"};
-            changed |= ImGuiMCP::Combo("Trail style", &settings.trailStyle, styles, 2);
+            const char* styles[]{Translations::Get("WispTrail"), Translations::Get("FollowTheChicken")};
+            changed |= ImGuiMCP::Combo(Translations::Label("TrailStyle"), &settings.trailStyle, styles, 2);
             if (settings.trailStyle == 1) {
-                changed |= ImGuiMCP::Checkbox("Show trail with chicken", &settings.chickenTrail);
-                changed |= ImGuiMCP::SliderFloat("Chicken lead distance", &settings.chickenDistance, 300.0f, 1000.0f, "%.0f units");
-                ImGuiMCP::TextWrapped("Cosmetic guide; reappears ahead if you outrun it.");
+                changed |= ImGuiMCP::Checkbox(Translations::Label("ShowTrailWithChicken"), &settings.chickenTrail);
+                changed |= ImGuiMCP::SliderFloat(Translations::Label("ChickenLeadDistance"), &settings.chickenDistance, 300.0f, 1000.0f, Translations::Get("UnitsFormat"));
+                ImGuiMCP::TextWrapped("%s", Translations::Get("ChickenHelp"));
             }
             ImGuiMCP::Separator();
-            changed |= ImGuiMCP::Checkbox("Hide indoors", &settings.hideIndoors);
-            changed |= ImGuiMCP::Checkbox("Hide in dungeons", &settings.hideDungeons);
-            changed |= ImGuiMCP::Checkbox("Hide in combat", &settings.hideInCombat);
+            changed |= ImGuiMCP::Checkbox(Translations::Label("HideIndoors"), &settings.hideIndoors);
+            changed |= ImGuiMCP::Checkbox(Translations::Label("HideInDungeons"), &settings.hideDungeons);
+            changed |= ImGuiMCP::Checkbox(Translations::Label("HideInCombat"), &settings.hideInCombat);
             ImGuiMCP::Separator();
-            changed |= ImGuiMCP::Checkbox("Custom colour", &settings.customColour);
+            changed |= ImGuiMCP::Checkbox(Translations::Label("CustomColour"), &settings.customColour);
             if (settings.customColour) {
-                changed |= ImGuiMCP::ColorEdit3("Trail colour", settings.colour.data());
+                changed |= ImGuiMCP::ColorEdit3(Translations::Label("TrailColour"), settings.colour.data());
             }
-            changed |= ImGuiMCP::SliderFloat("Brightness", &settings.brightness, 0.1f, 5.0f, "%.2f");
-            changed |= ImGuiMCP::SliderFloat("Opacity", &settings.opacity, 0.05f, 1.0f, "%.2f");
-            changed |= ImGuiMCP::SliderFloat("Height above route", &settings.height, 16.0f, 160.0f, "%.0f units");
-            changed |= ImGuiMCP::SliderFloat("Clear space around player", &settings.startDistance, 32.0f, 256.0f, "%.0f units");
-            changed |= ImGuiMCP::Checkbox("Glow destination", &settings.glowDoor);
-            changed |= ImGuiMCP::Checkbox("Animate trail", &settings.animate);
-            changed |= ImGuiMCP::Checkbox("Drifting sparks", &settings.particles);
-            changed |= ImGuiMCP::SliderFloat("Flow speed", &settings.animationSpeed, 0.25f, 3.0f, "%.2f");
-            changed |= ImGuiMCP::SliderFloat("Update fade duration", &settings.fadeSeconds, 0.1f, 1.5f, "%.2f s");
+            changed |= ImGuiMCP::SliderFloat(Translations::Label("Brightness"), &settings.brightness, 0.1f, 5.0f, "%.2f");
+            changed |= ImGuiMCP::SliderFloat(Translations::Label("Opacity"), &settings.opacity, 0.05f, 1.0f, "%.2f");
+            changed |= ImGuiMCP::SliderFloat(Translations::Label("HeightAboveRoute"), &settings.height, 16.0f, 160.0f, Translations::Get("UnitsFormat"));
+            changed |= ImGuiMCP::SliderFloat(Translations::Label("ClearSpaceAroundPlayer"), &settings.startDistance, 32.0f, 256.0f, Translations::Get("UnitsFormat"));
+            changed |= ImGuiMCP::Checkbox(Translations::Label("GlowDestination"), &settings.glowDoor);
+            changed |= ImGuiMCP::Checkbox(Translations::Label("AnimateTrail"), &settings.animate);
+            changed |= ImGuiMCP::Checkbox(Translations::Label("DriftingSparks"), &settings.particles);
+            changed |= ImGuiMCP::SliderFloat(Translations::Label("FlowSpeed"), &settings.animationSpeed, 0.25f, 3.0f, "%.2f");
+            changed |= ImGuiMCP::SliderFloat(Translations::Label("UpdateFadeDuration"), &settings.fadeSeconds, 0.1f, 1.5f, Translations::Get("SecondsFormat"));
             ImGuiMCP::Separator();
-            changed |= ImGuiMCP::Checkbox("Trail lighting", &settings.trailLights);
+            changed |= ImGuiMCP::Checkbox(Translations::Label("TrailLighting"), &settings.trailLights);
             if (settings.trailLights) {
-                changed |= ImGuiMCP::SliderFloat("Light brightness", &settings.lightBrightness, 0.1f, 5.0f, "%.2f");
-                changed |= ImGuiMCP::SliderFloat("Light radius", &settings.lightRadius, 128.0f, 384.0f, "%.0f units");
-                ImGuiMCP::TextWrapped("Requires Community Shaders with Light Limit Fix. Up to 12 nearby lights.");
+                changed |= ImGuiMCP::SliderFloat(Translations::Label("LightBrightness"), &settings.lightBrightness, 0.1f, 5.0f, "%.2f");
+                changed |= ImGuiMCP::SliderFloat(Translations::Label("LightRadius"), &settings.lightRadius, 128.0f, 384.0f, Translations::Get("UnitsFormat"));
+                ImGuiMCP::TextWrapped("%s", Translations::Get("LightingHelp"));
             }
             ImGuiMCP::Separator();
-            changed |= ImGuiMCP::SliderFloat("Trail length", &settings.trailLength, 1500.0f, 12000.0f, "%.0f units");
-            ImGuiMCP::TextWrapped("Maximum length; routes may end sooner. Longer trails cost more performance.");
-            changed |= ImGuiMCP::Checkbox("Anchor trail to the route", &settings.anchorTrail);
+            changed |= ImGuiMCP::SliderFloat(Translations::Label("TrailLength"), &settings.trailLength, 1500.0f, 12000.0f, Translations::Get("UnitsFormat"));
+            ImGuiMCP::TextWrapped("%s", Translations::Get("TrailLengthHelp"));
+            changed |= ImGuiMCP::Checkbox(Translations::Label("AnchorTrailToTheRoute"), &settings.anchorTrail);
             if (settings.anchorTrail) {
-                changed |= ImGuiMCP::SliderFloat("Rebuild when off route", &settings.offRouteDistance, 64.0f, 1024.0f, "%.0f units");
-                changed |= ImGuiMCP::SliderFloat("Extend with distance remaining", &settings.extendDistance, 256.0f, 6000.0f, "%.0f units");
-                ImGuiMCP::TextWrapped("For moving objectives, turn anchoring off or use Rebuild trail.");
+                changed |= ImGuiMCP::SliderFloat(Translations::Label("RebuildWhenOffRoute"), &settings.offRouteDistance, 64.0f, 1024.0f, Translations::Get("UnitsFormat"));
+                changed |= ImGuiMCP::SliderFloat(Translations::Label("ExtendWithDistanceRemaining"), &settings.extendDistance, 256.0f, 6000.0f, Translations::Get("UnitsFormat"));
+                ImGuiMCP::TextWrapped("%s", Translations::Get("AnchoringHelp"));
             } else {
-                changed |= ImGuiMCP::Checkbox("Refresh while moving", &settings.refreshWhileMoving);
-                changed |= ImGuiMCP::SliderFloat("Refresh interval", &settings.refreshSeconds, 0.25f, 2.0f, "%.2f s");
+                changed |= ImGuiMCP::Checkbox(Translations::Label("RefreshWhileMoving"), &settings.refreshWhileMoving);
+                changed |= ImGuiMCP::SliderFloat(Translations::Label("RefreshInterval"), &settings.refreshSeconds, 0.25f, 2.0f, Translations::Get("SecondsFormat"));
             }
             if (changed) {
                 SetSettings(settings);
                 QueueSave();
             }
             SavePendingSettings(!ImGuiMCP::IsAnyItemActive());
-            if (ImGuiMCP::Button("Rebuild trail")) {
+            if (ImGuiMCP::Button(Translations::Label("RebuildTrail"))) {
                 RequestRefresh();
             }
             ImGuiMCP::Separator();
             std::string text;
             {
                 std::scoped_lock lock(mutex);
-                text = std::format("{} | Trail segments: {}", status, segmentCount);
+                text = Translations::Format("StatusLine", Translations::Get(status.c_str()), segmentCount);
             }
             ImGuiMCP::TextWrapped("%s", text.c_str());
-            ImGuiMCP::TextWrapped("Track one quest for predictable guidance.");
+            ImGuiMCP::TextWrapped("%s", Translations::Get("QuestHelp"));
         }
     }
 
@@ -363,7 +364,7 @@ namespace AQT
     {
         std::scoped_lock lock(mutex);
         if (status != text) {
-            spdlog::info("Trail: {}", text);
+            spdlog::info("Trail: {}", Translations::English(text.c_str()));
         }
         status = std::move(text);
         segmentCount = segments;
@@ -376,8 +377,8 @@ namespace AQT
             return;
         }
         RegisterKeybindMenu();
-        SKSEMenuFramework::SetSection("Active Quest Trail");
-        SKSEMenuFramework::AddSectionItem("Settings", RenderMenu);
+        SKSEMenuFramework::SetSection(Translations::Get("ModName"));
+        SKSEMenuFramework::AddSectionItem(Translations::Get("Settings"), RenderMenu);
         spdlog::info("Settings page registered");
     }
 }

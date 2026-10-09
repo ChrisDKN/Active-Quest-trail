@@ -1,5 +1,6 @@
 #include "Keybind.h"
 #include "Settings.h"
+#include "Translations.h"
 #include "SKSEMenuFramework.h"
 
 #include <atomic>
@@ -36,12 +37,12 @@ namespace AQT
         std::string KeyName(int key)
         {
             if (!key) {
-                return "Unbound";
+                return Translations::Get("Unbound");
             }
             switch (key) {
-            case Key::kPause: return "Pause";
-            case Key::kNumLock: return "Num Lock";
-            case Key::kPrintScreen: return "Print Screen";
+            case Key::kPause: return Translations::Get("KeyPause");
+            case Key::kNumLock: return Translations::Get("KeyNumLock");
+            case Key::kPrintScreen: return Translations::Get("KeyPrintScreen");
             default: break;
             }
             wchar_t name[64]{};
@@ -52,7 +53,7 @@ namespace AQT
             if (length > 0 && WideCharToMultiByte(CP_UTF8, 0, name, length, utf8, 255, nullptr, nullptr) > 0) {
                 return utf8;
             }
-            return std::format("Key {}", key);
+            return Translations::Format("KeyNumber", key);
         }
 
         bool CaptureInput(RE::InputEvent* event)
@@ -128,28 +129,28 @@ namespace AQT
         bool RenderBinding(const char* name, int& key, int& modifier, Binding binding)
         {
             ImGuiMCP::PushID(name);
-            const char* modifiers[]{"None", "Ctrl", "Shift", "Alt"};
+            const char* modifiers[]{Translations::Get("ModifierNone"), Translations::Get("ModifierCtrl"), Translations::Get("ModifierShift"), Translations::Get("ModifierAlt")};
             ImGuiMCP::SetNextItemWidth(ImGuiMCP::GetFontSize() * 6.0f);
             bool changed = ImGuiMCP::Combo("##Modifier", &modifier, modifiers, 4);
             if (ImGuiMCP::IsItemHovered()) {
-                ImGuiMCP::SetTooltip("Modifier");
+                ImGuiMCP::SetTooltip("%s", Translations::Get("Modifier"));
             }
             ImGuiMCP::SameLine();
             const auto label = KeyName(key) + "###Key";
             const bool choose = ImGuiMCP::Button(label.c_str());
             ImGuiMCP::SameLine();
-            if (ImGuiMCP::Button("Clear")) {
+            if (ImGuiMCP::Button(Translations::Label("Clear"))) {
                 key = 0;
                 changed = true;
             }
             ImGuiMCP::SameLine();
-            ImGuiMCP::TextUnformatted(name);
+            ImGuiMCP::TextUnformatted(Translations::Get(name));
             ImGuiMCP::PopID();
             if (choose) {
                 capturedKey = 0;
                 captureBinding = binding;
                 capturing = true;
-                ImGuiMCP::OpenPopup("Choose trail key");
+                ImGuiMCP::OpenPopup(Translations::Label("ChooseTrailKey"));
             }
             return changed;
         }
@@ -195,35 +196,35 @@ namespace AQT
 
     bool RenderKeybindSettings(Settings& settings)
     {
-        bool changed = RenderBinding("Toggle key", settings.toggleKey, settings.toggleModifier, Binding::Toggle);
-        if (ImGuiMCP::Checkbox("Hold to show the trail", &settings.holdToShow)) {
+        bool changed = RenderBinding("ToggleKey", settings.toggleKey, settings.toggleModifier, Binding::Toggle);
+        if (ImGuiMCP::Checkbox(Translations::Label("HoldToShowTheTrail"), &settings.holdToShow)) {
             if (settings.holdToShow) {
                 settings.timedShow = false;
             }
             changed = true;
         }
-        changed |= RenderBinding("Hold key", settings.holdKey, settings.holdModifier, Binding::Hold);
-        if (ImGuiMCP::Checkbox("Press to show the trail temporarily", &settings.timedShow)) {
+        changed |= RenderBinding("HoldKey", settings.holdKey, settings.holdModifier, Binding::Hold);
+        if (ImGuiMCP::Checkbox(Translations::Label("PressToShowTheTrailTemporarily"), &settings.timedShow)) {
             if (settings.timedShow) {
                 settings.holdToShow = false;
             }
             changed = true;
         }
-        changed |= RenderBinding("Timed key", settings.timedKey, settings.timedModifier, Binding::Timed);
-        changed |= ImGuiMCP::SliderFloat("Show duration", &settings.showSeconds, 1.0f, 120.0f, "%.1f seconds");
-        ImGuiMCP::TextWrapped("Choose one mode, or leave both off for a continuous trail. Enable quest trail is the master switch. Pressing the timed key again restarts the countdown; paused menus pause it.");
+        changed |= RenderBinding("TimedKey", settings.timedKey, settings.timedModifier, Binding::Timed);
+        changed |= ImGuiMCP::SliderFloat(Translations::Label("ShowDuration"), &settings.showSeconds, 1.0f, 120.0f, Translations::Get("ShowSecondsFormat"));
+        ImGuiMCP::TextWrapped("%s", Translations::Get("VisibilityModeHelp"));
         const int showKey = settings.holdToShow ? settings.holdKey : settings.timedShow ? settings.timedKey : 0;
         const int showModifier = settings.holdToShow ? settings.holdModifier : settings.timedModifier;
         if (showKey && showKey == settings.toggleKey &&
             (showModifier == settings.toggleModifier || !showModifier || !settings.toggleModifier)) {
-            ImGuiMCP::TextWrapped("The show key overlaps the toggle key. Choose different keys or modifiers so the toggle does not switch the trail off.");
+            ImGuiMCP::TextWrapped("%s", Translations::Get("KeyConflictHelp"));
         }
-        if (ImGuiMCP::BeginPopupModal("Choose trail key", nullptr, ImGuiMCP::ImGuiWindowFlags_AlwaysAutoResize)) {
-            const char* name = captureBinding == Binding::Toggle ? "Toggle key" : captureBinding == Binding::Hold ? "Hold key" : "Timed key";
-            ImGuiMCP::Text("%s", name);
-            ImGuiMCP::TextUnformatted("Press a keyboard key. Escape cancels.");
+        if (ImGuiMCP::BeginPopupModal(Translations::Label("ChooseTrailKey"), nullptr, ImGuiMCP::ImGuiWindowFlags_AlwaysAutoResize)) {
+            const char* name = captureBinding == Binding::Toggle ? "ToggleKey" : captureBinding == Binding::Hold ? "HoldKey" : "TimedKey";
+            ImGuiMCP::Text("%s", Translations::Get(name));
+            ImGuiMCP::TextUnformatted(Translations::Get("ChooseKeyHelp"));
             const auto key = capturedKey.exchange(0);
-            const bool cancel = ImGuiMCP::Button("Cancel");
+            const bool cancel = ImGuiMCP::Button(Translations::Label("Cancel"));
             if (key != 0 || cancel || !capturing.load()) {
                 if (key > 0 && !cancel) {
                     auto& binding = captureBinding == Binding::Toggle ? settings.toggleKey :

@@ -54,6 +54,22 @@ Enable **Hold to show the trail** to display it only while your hold key is pres
 
 Pressing the timed key again restarts the countdown. Paused menus pause the timer, and loading a game clears it. **Enable quest trail** remains the master switch, and the indoor, dungeon, and combat visibility settings still apply to both modes.
 
+## Translations
+
+The menu reads Skyrim/SKSE translation tables using the game's `sLanguage` setting in `Skyrim.ini`. Missing or invalid entries fall back to English built into the DLL. Translations load at startup; restart Skyrim after installing or editing one.
+
+To create a translation:
+
+1. Copy [Interface/Translations/ActiveQuestTrail_ENGLISH.txt](Interface/Translations/ActiveQuestTrail_ENGLISH.txt) and rename `ENGLISH` to the game's language name, such as `GERMAN` or `FRENCH`.
+2. Translate the text after each tab. Keep the `$AQT_...` keys and the single tab separating each key from its value.
+3. Save as **UTF-16 little-endian with BOM**, preserving Windows (CRLF) line endings. Keep each entry on one line, avoid blank lines, and keep each complete line below 500 UTF-16 code units for the SKSE reader.
+4. Keep `{0}` and `{1}` placeholders intact; they may be reordered. Keep the `%.0f`, `%.1f`, and `%.2f` conversions in the three numeric format entries unchanged. Use `%%` for a literal percent sign in those entries.
+5. Install the file under `Data/Interface/Translations/` and restart Skyrim. A translation download only needs to contain `Interface/Translations/ActiveQuestTrail_<LANGUAGE>.txt`.
+
+Do not add `##` or `###` to translations; the plugin supplies stable control IDs. The `ModName` and `Settings` values must not contain `/`, which the framework uses to separate menu sections. Invalid labels and numeric formats use their English defaults. Diagnostic log messages remain in English.
+
+Chinese, Japanese, Korean, Cyrillic, Thai, and other character sets need a suitable font and glyph settings in SKSE Menu Framework. Configure these in the framework's settings or its `SKSEMenuFramework.ini`; AQT uses the framework's font. The English template covers AQT's controls, help, keybinding prompts, units, and trail status messages. Controls supplied by ImGui itself use the framework's text.
+
 ## Building
 
 Use Python 3.12+, CMake 3.25+, Ninja, and a C++23 compiler targeting the Windows MSVC ABI. Dependency revisions are specified in `scripts/bootstrap.py`.
@@ -86,6 +102,7 @@ All three runtime DLLs build by default. Packaging generates the ESP, meshes, te
 - `scripts/`: dependency bootstrap and asset/package generation.
 - `cmake/`: cross-compilation toolchain and generated version header template.
 - `installer/`: runtime selection and screenshot.
+- `Interface/Translations/`: menu translation files and the English template.
 - `extern/` and `licenses/`: vendored menu API and third-party license notices.
 
 Build caches, generated assets, release archives, and local settings are ignored by Git. The invisible guide mesh still references `wisp.dds`; both are generated and required.
