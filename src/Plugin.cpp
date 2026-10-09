@@ -17,10 +17,10 @@ namespace
         SKSE::RUNTIME_SSE_1_6_353,
         SKSE::RUNTIME_SSE_1_6_629,
         SKSE::RUNTIME_SSE_1_6_640,
-        SKSE::RUNTIME_SSE_1_6_659,
+        REL::Version{1, 6, 659, 1},  // GOG
         SKSE::RUNTIME_SSE_1_6_1130,
         SKSE::RUNTIME_SSE_1_6_1170,
-        SKSE::RUNTIME_SSE_1_6_1179,
+        REL::Version{1, 6, 1179, 1},  // GOG
         SKSE::RUNTIME_SSE_1_7_99,
         SKSE::RUNTIME_SSE_1_7_104,
     };
