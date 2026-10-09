@@ -157,10 +157,18 @@ namespace AQT
 
     void SetSettings(Settings settings)
     {
-        if (!IsBindableKey(settings.toggleKey)) {
-            settings.toggleKey = 0;
+        for (auto* key : {&settings.toggleKey, &settings.holdKey, &settings.timedKey}) {
+            if (!IsBindableKey(*key)) {
+                *key = 0;
+            }
         }
         settings.toggleModifier = std::clamp(settings.toggleModifier, 0, 3);
+        settings.holdModifier = std::clamp(settings.holdModifier, 0, 3);
+        settings.timedModifier = std::clamp(settings.timedModifier, 0, 3);
+        if (settings.holdToShow) {
+            settings.timedShow = false;
+        }
+        settings.showSeconds = std::isfinite(settings.showSeconds) ? std::clamp(settings.showSeconds, 1.0f, 120.0f) : Settings{}.showSeconds;
         settings.trailStyle = std::clamp(settings.trailStyle, 0, 1);
         settings.chickenDistance = std::clamp(settings.chickenDistance, 300.0f, 1000.0f);
         settings.brightness = std::clamp(settings.brightness, 0.1f, 5.0f);
@@ -179,6 +187,12 @@ namespace AQT
             component = std::clamp(component, 0.0f, 1.0f);
         }
         std::scoped_lock lock(mutex);
+        if (settings.enabled != current.enabled || settings.holdToShow != current.holdToShow ||
+            settings.timedShow != current.timedShow || settings.holdKey != current.holdKey ||
+            settings.holdModifier != current.holdModifier || settings.timedKey != current.timedKey ||
+            settings.timedModifier != current.timedModifier || settings.showSeconds != current.showSeconds) {
+            ResetTrailVisibility();
+        }
         current = settings;
         ++revision;
     }
@@ -188,6 +202,7 @@ namespace AQT
         {
             std::scoped_lock lock(mutex);
             current.enabled = !current.enabled;
+            ResetTrailVisibility();
             ++revision;
         }
         QueueSave();
@@ -212,6 +227,13 @@ namespace AQT
             settings.enabled = config.Number("General", "Enabled", 1) != 0;
             settings.toggleKey = static_cast<int>(std::clamp(config.Number("Controls", "ToggleKey", 0), 0.0f, 255.0f));
             settings.toggleModifier = static_cast<int>(std::clamp(config.Number("Controls", "ToggleModifier", 0), 0.0f, 3.0f));
+            settings.holdToShow = config.Number("Controls", "HoldToShow", 0) != 0;
+            settings.holdKey = static_cast<int>(std::clamp(config.Number("Controls", "HoldKey", 0), 0.0f, 255.0f));
+            settings.holdModifier = static_cast<int>(std::clamp(config.Number("Controls", "HoldModifier", 0), 0.0f, 3.0f));
+            settings.timedShow = config.Number("Controls", "TimedShow", 0) != 0;
+            settings.timedKey = static_cast<int>(std::clamp(config.Number("Controls", "TimedKey", 0), 0.0f, 255.0f));
+            settings.timedModifier = static_cast<int>(std::clamp(config.Number("Controls", "TimedModifier", 0), 0.0f, 3.0f));
+            settings.showSeconds = config.Number("Controls", "ShowSeconds", settings.showSeconds);
             settings.trailStyle = static_cast<int>(std::clamp(config.Number("General", "TrailStyle", 0), 0.0f, 1.0f));
             settings.chickenDistance = config.Number("General", "ChickenDistance", settings.chickenDistance);
             settings.chickenTrail = config.Number("General", "ChickenTrail", 0) != 0;
@@ -288,7 +310,14 @@ namespace AQT
                    << "\nAnimationSpeed=" << settings.animationSpeed
                    << "\nFadeSeconds=" << settings.fadeSeconds << '\n';
             output << "\n[Controls]\nToggleKey=" << settings.toggleKey
-                   << "\nToggleModifier=" << settings.toggleModifier << '\n';
+                   << "\nToggleModifier=" << settings.toggleModifier
+                   << "\nHoldToShow=" << settings.holdToShow
+                   << "\nHoldKey=" << settings.holdKey
+                   << "\nHoldModifier=" << settings.holdModifier
+                   << "\nTimedShow=" << settings.timedShow
+                   << "\nTimedKey=" << settings.timedKey
+                   << "\nTimedModifier=" << settings.timedModifier
+                   << "\nShowSeconds=" << settings.showSeconds << '\n';
             output << "\n[Lighting]\nEnabled=" << settings.trailLights
                    << "\nBrightness=" << settings.lightBrightness
                    << "\nRadius=" << settings.lightRadius << '\n';

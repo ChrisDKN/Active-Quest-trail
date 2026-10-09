@@ -11,6 +11,9 @@ namespace AQT
         using Key = RE::BSKeyboardDevice::Key;
         std::atomic<bool> capturing{false};
         std::atomic<int> capturedKey{0};
+        enum class Binding { Toggle, Hold, Timed };
+        Binding captureBinding{Binding::Toggle};
+        std::atomic<float> timedRemaining{0.0f};
         bool menuAvailable{false};
 
         bool IsModifier(int key)
@@ -78,7 +81,7 @@ namespace AQT
             return true;
         }
 
-        bool CanToggle()
+        bool CanUseKeybind()
         {
             auto* player = RE::PlayerCharacter::GetSingleton();
             auto* ui = RE::UI::GetSingleton();
@@ -93,6 +96,13 @@ namespace AQT
             const auto& data = controls->GetRuntimeData();
             return data.textEntryCount == 0 &&
                    (data.contextPriorityStack.empty() || data.contextPriorityStack.back() == RE::UserEvents::INPUT_CONTEXT_ID::kGameplay);
+        }
+
+        bool KeyHeld(int key)
+        {
+            auto* input = RE::BSInputDeviceManager::GetSingleton();
+            auto* keyboard = input ? input->GetKeyboard() : nullptr;
+            return key > 0 && key < 256 && keyboard && (keyboard->GetRuntimeData().curState[key] & 0x80) != 0;
         }
 
         bool ModifierHeld(int modifier)
@@ -115,7 +125,36 @@ namespace AQT
             }
         }
 
-        class ToggleInput final : public RE::BSTEventSink<RE::InputEvent*>
+        bool RenderBinding(const char* name, int& key, int& modifier, Binding binding)
+        {
+            ImGuiMCP::PushID(name);
+            const char* modifiers[]{"None", "Ctrl", "Shift", "Alt"};
+            ImGuiMCP::SetNextItemWidth(ImGuiMCP::GetFontSize() * 6.0f);
+            bool changed = ImGuiMCP::Combo("##Modifier", &modifier, modifiers, 4);
+            if (ImGuiMCP::IsItemHovered()) {
+                ImGuiMCP::SetTooltip("Modifier");
+            }
+            ImGuiMCP::SameLine();
+            const auto label = KeyName(key) + "###Key";
+            const bool choose = ImGuiMCP::Button(label.c_str());
+            ImGuiMCP::SameLine();
+            if (ImGuiMCP::Button("Clear")) {
+                key = 0;
+                changed = true;
+            }
+            ImGuiMCP::SameLine();
+            ImGuiMCP::TextUnformatted(name);
+            ImGuiMCP::PopID();
+            if (choose) {
+                capturedKey = 0;
+                captureBinding = binding;
+                capturing = true;
+                ImGuiMCP::OpenPopup("Choose trail key");
+            }
+            return changed;
+        }
+
+        class TrailInput final : public RE::BSTEventSink<RE::InputEvent*>
         {
             RE::BSEventNotifyControl ProcessEvent(RE::InputEvent* const* events, RE::BSTEventSource<RE::InputEvent*>*) override
             {
@@ -132,9 +171,16 @@ namespace AQT
                         continue;
                     }
                     const auto settings = GetSettings();
-                    if (settings.toggleKey && button->GetIDCode() == static_cast<std::uint32_t>(settings.toggleKey) &&
-                        !capturing.load() && CanToggle() && ModifierHeld(settings.toggleModifier)) {
+                    if (capturing.load() || !CanUseKeybind()) {
+                        continue;
+                    }
+                    const auto key = button->GetIDCode();
+                    if (settings.toggleKey && key == static_cast<std::uint32_t>(settings.toggleKey) &&
+                        ModifierHeld(settings.toggleModifier)) {
                         ToggleEnabled();
+                    } else if (settings.enabled && settings.timedShow && settings.timedKey &&
+                               key == static_cast<std::uint32_t>(settings.timedKey) && ModifierHeld(settings.timedModifier)) {
+                        timedRemaining = settings.showSeconds;
                     }
                 }
                 return RE::BSEventNotifyControl::kContinue;
@@ -149,33 +195,40 @@ namespace AQT
 
     bool RenderKeybindSettings(Settings& settings)
     {
-        const char* modifiers[]{"None", "Ctrl", "Shift", "Alt"};
-        ImGuiMCP::SetNextItemWidth(ImGuiMCP::GetFontSize() * 6.0f);
-        bool changed = ImGuiMCP::Combo("##AQTToggleModifier", &settings.toggleModifier, modifiers, 4);
-        if (ImGuiMCP::IsItemHovered()) {
-            ImGuiMCP::SetTooltip("Modifier");
-        }
-        ImGuiMCP::SameLine();
-        const auto label = KeyName(settings.toggleKey) + "###AQTToggleKey";
-        if (ImGuiMCP::Button(label.c_str())) {
-            capturedKey = 0;
-            capturing = true;
-            ImGuiMCP::OpenPopup("Choose toggle key");
-        }
-        ImGuiMCP::SameLine();
-        if (ImGuiMCP::Button("Clear##AQTToggleKey")) {
-            settings.toggleKey = 0;
+        bool changed = RenderBinding("Toggle key", settings.toggleKey, settings.toggleModifier, Binding::Toggle);
+        if (ImGuiMCP::Checkbox("Hold to show the trail", &settings.holdToShow)) {
+            if (settings.holdToShow) {
+                settings.timedShow = false;
+            }
             changed = true;
         }
-        ImGuiMCP::SameLine();
-        ImGuiMCP::TextUnformatted("Toggle key");
-        if (ImGuiMCP::BeginPopupModal("Choose toggle key", nullptr, ImGuiMCP::ImGuiWindowFlags_AlwaysAutoResize)) {
+        changed |= RenderBinding("Hold key", settings.holdKey, settings.holdModifier, Binding::Hold);
+        if (ImGuiMCP::Checkbox("Press to show the trail temporarily", &settings.timedShow)) {
+            if (settings.timedShow) {
+                settings.holdToShow = false;
+            }
+            changed = true;
+        }
+        changed |= RenderBinding("Timed key", settings.timedKey, settings.timedModifier, Binding::Timed);
+        changed |= ImGuiMCP::SliderFloat("Show duration", &settings.showSeconds, 1.0f, 120.0f, "%.1f seconds");
+        ImGuiMCP::TextWrapped("Choose one mode, or leave both off for a continuous trail. Enable quest trail is the master switch. Pressing the timed key again restarts the countdown; paused menus pause it.");
+        const int showKey = settings.holdToShow ? settings.holdKey : settings.timedShow ? settings.timedKey : 0;
+        const int showModifier = settings.holdToShow ? settings.holdModifier : settings.timedModifier;
+        if (showKey && showKey == settings.toggleKey &&
+            (showModifier == settings.toggleModifier || !showModifier || !settings.toggleModifier)) {
+            ImGuiMCP::TextWrapped("The show key overlaps the toggle key. Choose different keys or modifiers so the toggle does not switch the trail off.");
+        }
+        if (ImGuiMCP::BeginPopupModal("Choose trail key", nullptr, ImGuiMCP::ImGuiWindowFlags_AlwaysAutoResize)) {
+            const char* name = captureBinding == Binding::Toggle ? "Toggle key" : captureBinding == Binding::Hold ? "Hold key" : "Timed key";
+            ImGuiMCP::Text("%s", name);
             ImGuiMCP::TextUnformatted("Press a keyboard key. Escape cancels.");
             const auto key = capturedKey.exchange(0);
             const bool cancel = ImGuiMCP::Button("Cancel");
             if (key != 0 || cancel || !capturing.load()) {
                 if (key > 0 && !cancel) {
-                    settings.toggleKey = key;
+                    auto& binding = captureBinding == Binding::Toggle ? settings.toggleKey :
+                        captureBinding == Binding::Hold ? settings.holdKey : settings.timedKey;
+                    binding = key;
                     changed = true;
                 }
                 capturing = false;
@@ -195,11 +248,42 @@ namespace AQT
         (void)input;
     }
 
-    void RegisterToggleInput()
+    void RegisterTrailInput()
     {
-        static ToggleInput input;
+        static TrailInput input;
         if (auto* manager = RE::BSInputDeviceManager::GetSingleton()) {
             manager->AddEventSink(&input);
         }
+    }
+
+    bool UpdateTrailVisibility(const Settings& settings, float delta)
+    {
+        if (!settings.enabled) {
+            ResetTrailVisibility();
+            return false;
+        }
+        if (settings.holdToShow) {
+            return !capturing.load() && CanUseKeybind() && KeyHeld(settings.holdKey) && ModifierHeld(settings.holdModifier);
+        }
+        if (!settings.timedShow) {
+            return true;
+        }
+        if (!settings.timedKey) {
+            ResetTrailVisibility();
+            return false;
+        }
+        auto remaining = timedRemaining.load();
+        while (remaining > 0.0f) {
+            const auto next = std::max(0.0f, remaining - std::max(0.0f, delta));
+            if (timedRemaining.compare_exchange_weak(remaining, next)) {
+                return next > 0.0f;
+            }
+        }
+        return false;
+    }
+
+    void ResetTrailVisibility()
+    {
+        timedRemaining = 0.0f;
     }
 }

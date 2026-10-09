@@ -11,6 +11,13 @@ namespace AQT
         bool enabled{true};
         int toggleKey{0};
         int toggleModifier{0};
+        bool holdToShow{false};
+        int holdKey{0};
+        int holdModifier{0};
+        bool timedShow{false};
+        int timedKey{0};
+        int timedModifier{0};
+        float showSeconds{10.0f};
         int trailStyle{0};
         float chickenDistance{500.0f};
         bool chickenTrail{false};

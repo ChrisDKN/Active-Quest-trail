@@ -1,6 +1,7 @@
 #include "Trail.h"
 #include "ChickenGuide.h"
 #include "DestinationGlow.h"
+#include "Keybind.h"
 #include "RefreshState.h"
 #include "Settings.h"
 #include "VisualMath.h"
@@ -826,6 +827,14 @@ namespace AQT
             if (!ui || ui->GameIsPaused() || ui->IsMenuOpen(RE::LoadingMenu::MENU_NAME) || ui->IsMenuOpen(RE::MainMenu::MENU_NAME)) {
                 return;
             }
+            const auto settings = GetSettings();
+            if (!UpdateTrailVisibility(settings, delta)) {
+                ClearTrail();
+                SetStatus(!settings.enabled ? "Disabled" : settings.holdToShow ?
+                    settings.holdKey ? "Hold the configured key to show the trail" : "Set a hold key in Settings" :
+                    settings.timedKey ? "Press the configured key to show the trail" : "Set a timed key in Settings");
+                return;
+            }
             refresh.Advance(delta);
             checkElapsed += delta;
             targetElapsed += delta;
@@ -845,13 +854,11 @@ namespace AQT
             if (cleanupPending) {
                 ClearTrail();
             }
-            const auto settings = GetSettings();
             const bool anchoringChanged = settings.anchorTrail != appearance.anchorTrail;
             const bool lengthChanged = settings.trailLength != appearance.trailLength;
             appearance = settings;
             auto* cell = player->GetParentCell();
-            const char* hidden = !settings.enabled ? "Disabled" :
-                                 player->IsDead() ? "Hidden while dead" :
+            const char* hidden = player->IsDead() ? "Hidden while dead" :
                                  !cell ? "Waiting for an area" :
                                  settings.hideIndoors && cell->IsInteriorCell() ? "Hidden indoors" :
                                  settings.hideDungeons && InDungeon(player) ? "Hidden in a dungeon" :
@@ -950,6 +957,7 @@ namespace AQT
 
         void ResetRuntime()
         {
+            ResetTrailVisibility();
             ResetChickenGuide(true);
             ResetDestinationGlow(true);
             ClearVisuals();

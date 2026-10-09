@@ -34,6 +34,9 @@ Settings are written to `Data/SKSE/Plugins/ActiveQuestTrail.ini`. No settings IN
 
 | Setting | Default |
 | --- | --- |
+| Hold to show / press to show temporarily | Off / Off |
+| Toggle / hold / timed keybind | Unbound / Unbound / Unbound |
+| Timed show duration | 10 seconds (adjustable from 1 to 120) |
 | Hide indoors / in dungeons / in combat | Off |
 | Colour / brightness / opacity | White / 1 / 1 |
 | Height above route | 20 units |
@@ -46,6 +49,10 @@ Settings are written to `Data/SKSE/Plugins/ActiveQuestTrail.ini`. No settings IN
 | Rebuild when off route / extend near end | 256 / 2,000 units |
 
 **Restore defaults** resets all settings, including enabling lighting. For moving objectives, use **Rebuild trail** or disable anchoring.
+
+Enable **Hold to show the trail** to display it only while your hold key is pressed, or **Press to show the trail temporarily** to display it for the configured duration after a key press. Enabling either mode turns the other off. Both modes are off by default, preserving the continuous trail, and both keys start unassigned. Click **Unbound** to choose a keyboard key, optionally select Ctrl, Shift, or Alt, and use **Clear** to remove it. Choose a different binding from the toggle key.
+
+Pressing the timed key again restarts the countdown. Paused menus pause the timer, and loading a game clears it. **Enable quest trail** remains the master switch, and the indoor, dungeon, and combat visibility settings still apply to both modes.
 
 ## Building
 

@@ -7,5 +7,7 @@ namespace AQT
     bool IsBindableKey(int key);
     bool RenderKeybindSettings(Settings& settings);
     void RegisterKeybindMenu();
-    void RegisterToggleInput();
+    void RegisterTrailInput();
+    bool UpdateTrailVisibility(const Settings& settings, float delta);
+    void ResetTrailVisibility();
 }

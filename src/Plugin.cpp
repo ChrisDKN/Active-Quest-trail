@@ -24,7 +24,7 @@ namespace
         case SKSE::MessagingInterface::kDataLoaded:
             AQT::LoadSettings();
             AQT::RegisterMenu();
-            AQT::RegisterToggleInput();
+            AQT::RegisterTrailInput();
             if (AQT::InitializeTrail()) {
                 AQT::InstallUpdateHook();
             }
