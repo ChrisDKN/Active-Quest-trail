@@ -2,23 +2,27 @@
 
 A persistent, animated quest trail for Skyrim Special Edition. Follow a floating trail to the active objective without equipping a spell or shout. The route's quest-marked door or object glows even when the trail stops short, and optional Community Shaders lighting illuminates nearby surfaces.
 
-![Active Quest Trail](installer/fomod/with_cs_light.png)
+![Active Quest Trail](docs/with_cs_light.png)
 
 ## Requirements
 
-| Skyrim Steam version | SKSE | Address Library |
+| Skyrim version | SKSE | Address Library |
 | --- | --- | --- |
 | 1.5.97 | 2.0.20 | Special Edition database: `version-1-5-97-0.bin` |
+| 1.6.317, 1.6.318, 1.6.323, 1.6.342, 1.6.353, 1.6.629, 1.6.640, 1.6.1130 | Matching archived build | Anniversary Edition database matching the game version |
+| 1.6.659 (GOG) | Matching archived GOG build | Matching 1.6.659 database |
 | 1.6.1170 | 2.2.6 | Matching 1.6.1170 database |
+| 1.6.1179 (GOG) | 2.2.6 GOG | Matching 1.6.1179 database |
+| 1.7.99 | Matching archived build | All in One v13 or newer, including the 1.7.99 database |
 | 1.7.104 | 2.3.1 | All in One v13 or newer, including the 1.7.104 database |
 
-Install [SKSE](https://skse.silverlock.org/), [Address Library](https://www.nexusmods.com/skyrimspecialedition/mods/32444), and the Windows x64 Visual C++ runtime. The installer provides a separate DLL for each supported version. Other runtimes, including VR and GOG, are not yet supported.
+Install [SKSE](https://skse.silverlock.org/), [Address Library](https://www.nexusmods.com/skyrimspecialedition/mods/32444), and the Windows x64 Visual C++ runtime. One DLL handles all listed Steam and GOG runtimes automatically using CommonLibSSE-NG. Install the SKSE build and Address Library database matching your exact game version; older SKSE builds are available from the archive linked on the SKSE website. VR, Epic, and Windows Store/Game Pass are unsupported. Future game updates need a compatibility review before being added.
 
 [SKSE Menu Framework 3](https://github.com/QTR-Modding/SKSE-Menu-Framework-3-API) provides the optional settings menu. Trail lighting requires Community Shaders with Light Limit Fix enabled.
 
 ## Installation
 
-1. Install the release ZIP with a FOMOD-capable mod manager and select your Skyrim version.
+1. Install the release ZIP with your mod manager, or extract its contents into Skyrim's `Data` directory. No FOMOD or version selection is needed.
 2. Enable `ActiveQuestTrail.esp`, restart Skyrim, and launch through SKSE.
 3. Track a quest with an objective marker. Tracking one quest at a time gives more predictable guidance.
 
@@ -80,7 +84,7 @@ On Linux, install LLVM 20 (including clang-cl, lld-link, llvm-lib, llvm-rc, and 
 python3 scripts/bootstrap.py --linux-sdk
 cmake --preset linux
 cmake --build --preset linux
-python3 scripts/package.py build/linux/ActiveQuestTrail.dll build/linux/1.7.104/ActiveQuestTrail.dll build/linux/1.5.97/ActiveQuestTrail.dll
+python3 scripts/package.py build/linux/ActiveQuestTrail.dll
 ```
 
 On Windows, run these commands from an x64 Visual Studio developer terminal with MSVC 14.51 (compiler 19.51), the Windows SDK, and Ninja available. This matches the pinned CommonLib prebuilt toolset:
@@ -89,19 +93,19 @@ On Windows, run these commands from an x64 Visual Studio developer terminal with
 python scripts/bootstrap.py
 cmake --preset windows
 cmake --build --preset windows
-python scripts/package.py build/windows/ActiveQuestTrail.dll build/windows/1.7.104/ActiveQuestTrail.dll build/windows/1.5.97/ActiveQuestTrail.dll
+python scripts/package.py build/windows/ActiveQuestTrail.dll
 ```
 
-All three runtime DLLs build by default. Packaging generates the ESP, meshes, textures, and FOMOD in `dist/`. No Creation Kit, NifSkope, Skyrim installation, or extracted game assets are needed to build the package. The mist references Skyrim's existing `MagicCaustic01.dds` texture.
+The build produces one DLL for all supported runtimes. Packaging generates a ZIP in `dist/` with the DLL, ESP, BSA, and translations directly under their `Data` paths. No Creation Kit, NifSkope, Skyrim installation, or extracted game assets are needed to build the package. The mist references Skyrim's existing `MagicCaustic01.dds` texture.
 
-`VERSION` is the release version source for CMake, plugin metadata, startup logging, and packaging. For a loose 1.6.1170 developer install, first run `scripts/build_assets.py` and `scripts/build_records.py`, then use `cmake --install build/linux --prefix <Data-directory>` (or `build/windows`).
+`VERSION` is the release version source for CMake, plugin metadata, startup logging, and packaging. For a loose developer install on any supported runtime, first run `scripts/build_assets.py` and `scripts/build_records.py`, then use `cmake --install build/linux --prefix <Data-directory>` (or `build/windows`).
 
 ## Source layout
 
 - `src/`: route handling, rendering, destination glow, settings, and plugin entry point.
 - `scripts/`: dependency bootstrap and asset/package generation.
 - `cmake/`: cross-compilation toolchain and generated version header template.
-- `installer/`: runtime selection and screenshot.
+- `docs/`: mod screenshots.
 - `Interface/Translations/`: menu translation files and the English template.
 - `extern/` and `licenses/`: vendored menu API and third-party license notices.
 

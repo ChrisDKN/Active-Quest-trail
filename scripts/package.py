@@ -16,11 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("dll", type=Path)
-    parser.add_argument("dll_17104", type=Path)
-    parser.add_argument("dll_1597", type=Path)
     args = parser.parse_args()
-    if not all(dll.is_file() for dll in (args.dll, args.dll_17104, args.dll_1597)):
-        parser.error("All three compiled runtime DLLs are required")
+    if not args.dll.is_file():
+        parser.error("The compiled ActiveQuestTrail.dll is required")
     version = (ROOT / "VERSION").read_text().strip()
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         parser.error("VERSION must contain major.minor.patch")
@@ -28,26 +26,15 @@ def main():
     if destination.exists():
         shutil.rmtree(destination)
     destination.mkdir(parents=True, exist_ok=True)
-    core = destination / "Core"
-    core.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="aqt-assets-") as temporary:
         assets = Path(temporary)
         build_assets.build(assets)
-        build_archive.build(assets, core / "ActiveQuestTrail.bsa")
-    build_records.build(core)
-    shutil.copytree(ROOT / "Interface", core / "Interface")
-    for runtime, dll in [("1.5.97", args.dll_1597), ("1.6.1170", args.dll), ("1.7.104", args.dll_17104)]:
-        target = destination / "Runtime" / runtime / "SKSE/Plugins/ActiveQuestTrail.dll"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(dll, target)
-    shutil.copytree(ROOT / "installer/fomod", destination / "fomod", dirs_exist_ok=True)
-    (destination / "fomod/info.xml").write_text(
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<fomod>\n    <Name>Active Quest Trail</Name>\n'
-        '    <Author>Active Quest Trail contributors</Author>\n'
-        f'    <Version>{version}</Version>\n'
-        '    <Description>A persistent quest trail with matching destination glow and optional Community Shaders lighting.</Description>\n'
-        '</fomod>\n', encoding="utf-8")
+        build_archive.build(assets, destination / "ActiveQuestTrail.bsa")
+    build_records.build(destination)
+    shutil.copytree(ROOT / "Interface", destination / "Interface")
+    target = destination / "SKSE/Plugins/ActiveQuestTrail.dll"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(args.dll, target)
     output = destination.parent / (destination.name + ".zip")
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(destination.rglob("*")):

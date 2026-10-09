@@ -8,16 +8,28 @@
 
 namespace
 {
-#ifdef AQT_RUNTIME_17104
-    constexpr auto runtime = SKSE::RUNTIME_SSE_1_7_104;
-    constexpr REL::Version minimumSKSE{2, 3, 1, 0};
-#elif defined(AQT_RUNTIME_1597)
-    constexpr auto runtime = SKSE::RUNTIME_SSE_1_5_97;
+    constexpr std::initializer_list<REL::Version> supportedRuntimes{
+        SKSE::RUNTIME_SSE_1_5_97,
+        SKSE::RUNTIME_SSE_1_6_317,
+        SKSE::RUNTIME_SSE_1_6_318,
+        SKSE::RUNTIME_SSE_1_6_323,
+        SKSE::RUNTIME_SSE_1_6_342,
+        SKSE::RUNTIME_SSE_1_6_353,
+        SKSE::RUNTIME_SSE_1_6_629,
+        SKSE::RUNTIME_SSE_1_6_640,
+        SKSE::RUNTIME_SSE_1_6_659,
+        SKSE::RUNTIME_SSE_1_6_1130,
+        SKSE::RUNTIME_SSE_1_6_1170,
+        SKSE::RUNTIME_SSE_1_6_1179,
+        SKSE::RUNTIME_SSE_1_7_99,
+        SKSE::RUNTIME_SSE_1_7_104,
+    };
     constexpr REL::Version minimumSKSE{2, 0, 20, 0};
-#else
-    constexpr auto runtime = SKSE::RUNTIME_SSE_1_6_1170;
-    constexpr REL::Version minimumSKSE{2, 2, 6, 0};
-#endif
+
+    bool SupportsRuntime(REL::Version runtime)
+    {
+        return std::ranges::find(supportedRuntimes, runtime) != supportedRuntimes.end();
+    }
 
     void Message(SKSE::MessagingInterface::Message* message)
     {
@@ -55,25 +67,26 @@ SKSE_PLUGIN_VERSION = [] {
     version.PluginName("ActiveQuestTrail");
     version.AuthorName("Active Quest Trail contributors");
     version.UsesAddressLibrary();
-    version.UsesUpdatedStructs();
-    version.CompatibleVersions({runtime});
+    version.UsesNoStructs();  // CommonLib selects pre/post-1.6.629 layouts at runtime.
+    version.CompatibleVersions(supportedRuntimes);
     version.MinimumRequiredXSEVersion(minimumSKSE);
     return version;
 }();
 
-#ifdef AQT_RUNTIME_1597
 SKSE_PLUGIN_QUERY(const SKSE::QueryInterface* skse, SKSE::PluginInfo* info)
 {
     info->infoVersion = SKSE::PluginInfo::kVersion;
     info->name = "ActiveQuestTrail";
     info->version = AQT::pluginVersion.pack();
-    return !skse->IsEditor() && skse->RuntimeVersion() == runtime &&
+    return !skse->IsEditor() && SupportsRuntime(skse->RuntimeVersion()) &&
            skse->SKSEVersion() >= minimumSKSE.pack();
 }
-#endif
 
 SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* skse)
 {
+    if (skse->IsEditor()) {
+        return false;
+    }
     const auto directory = SKSE::log::log_directory();
     if (!directory) {
         return false;
@@ -83,8 +96,12 @@ SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* skse)
     spdlog::set_default_logger(std::move(logger));
     spdlog::set_pattern("[%H:%M:%S] [%l] %v");
     spdlog::flush_on(spdlog::level::info);
-    if (skse->RuntimeVersion() != runtime) {
-        spdlog::error("This build requires Skyrim {}; found {}. Select the matching game version in the installer.", runtime.string(), skse->RuntimeVersion().string());
+    if (!SupportsRuntime(skse->RuntimeVersion())) {
+        spdlog::error("Skyrim {} is not supported by this build of Active Quest Trail.", skse->RuntimeVersion().string());
+        return false;
+    }
+    if (skse->SKSEVersion() < minimumSKSE.pack()) {
+        spdlog::error("Active Quest Trail requires SKSE {} or newer.", minimumSKSE.string());
         return false;
     }
     SKSE::Init(skse);
